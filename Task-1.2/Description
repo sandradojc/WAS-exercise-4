@@ -1,0 +1,7 @@
+Query 1 uses the **comunica-sparql** engine for my WebID doc as the data source.
+It retrieves all URIs **?person** that are **linked to my WebID via foaf:knows predicate**.
+It likely uses just **one HTTP GET request** to retrieve the document.
+
+Query 2 uses the **comunica-sparql-link-traversal** engine for the navigational query **throughout the documents**.
+It finds all distinct **?person**'s that can be found through the **traversal of all the foaf:knows links**.
+It uses **multiple HTTP GET requests** to retrieve all the newly discovered documents.

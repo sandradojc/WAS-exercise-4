@@ -1,0 +1,5 @@
+comunica-sparql-link-traversal https://wiser-solid-xi.interactions.ics.unisg.ch/TestSandra/profile/card#me "
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?person WHERE {
+  <https://wiser-solid-xi.interactions.ics.unisg.ch/TestSandra/profile/card#me> foaf:knows* ?person.
+}"
