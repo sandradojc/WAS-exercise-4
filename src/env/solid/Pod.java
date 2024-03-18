@@ -4,6 +4,12 @@ import cartago.Artifact;
 import cartago.OPERATION;
 import cartago.OpFeedbackParam;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.io.IOException;
+
 /**
  * A CArtAgO artifact that agent can use to interact with LDP containers in a Solid pod.
  */
@@ -29,7 +35,29 @@ public class Pod extends Artifact {
    */
     @OPERATION
     public void createContainer(String containerName) {
-        log("1. Implement the method createContainer()");
+        String fullUri = this.podURL + (this.podURL.endsWith("/") ? "" : "/") + containerName + "/";
+
+        String body = "@prefix ldp: <http://www.w3.org/ns/ldp#>.\n"
+        + "@prefix dcterms: <http://purl.org/dc/terms/>.\n"
+        + "<> a ldp:Container, ldp:BasicContainer;\n"
+        + "dcterms:title \"" + containerName + "\";\n"
+        + "dcterms:description \"" + containerName + " Container\".";
+
+        HttpRequest request = HttpRequest.newBuilder(URI.create(fullUri))
+            .header("Content-Type", "text/turtle")
+            .header("Link", "<http://www.w3.org/ns/ldp#BasicContainer>; rel=\"type\"")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+        
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            log("1. Implement the method createContainer()");
+        } catch (IOException | InterruptedException e) {
+            log("Exception while creating container: " + e.getMessage());
+            Thread.currentThread().interrupt();
+        }
     }
 
   /**
@@ -41,7 +69,22 @@ public class Pod extends Artifact {
    */
     @OPERATION
     public void publishData(String containerName, String fileName, Object[] data) {
-        log("2. Implement the method publishData()");
+        String fullUri = this.podURL + "/" + containerName + "/" + fileName;
+        String payload = createStringFromArray(data);
+
+        HttpRequest request = HttpRequest.newBuilder(URI.create(fullUri))
+            .header("Content-Type", "text/plain")
+            .PUT(HttpRequest.BodyPublishers.ofString(payload))
+            .build();
+
+        HttpClient httpClient = HttpClient.newHttpClient();
+        try {
+            httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            log("2. Implement the method publishData()");
+        } catch (IOException | InterruptedException e) {
+            log("Exception while publishing: " + e.getMessage());
+            Thread.currentThread().interrupt();
+        }
     }
 
   /**
@@ -64,9 +107,27 @@ public class Pod extends Artifact {
    * @return An array whose elements are the data read from the .txt file
    */
     public Object[] readData(String containerName, String fileName) {
-        log("3. Implement the method readData(). Currently, the method returns mock data");
+        String fullUri = this.podURL + "/" + containerName + "/" + fileName;
+
+        HttpRequest request = HttpRequest.newBuilder(URI.create(fullUri))
+            .GET()
+            .build();
+
+        try {
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+            Object[] dataArray = createArrayFromString(responseBody);
+            log("3. Implement the method readData(). Currently, the method returns mock data");
+            return dataArray;
+        } catch (IOException | InterruptedException e) {
+            log("Exception while reading: " + e.getMessage());
+            Thread.currentThread().interrupt();
+            return new Object[0];
+        }
+    }
 
         // Remove the following mock responses once you have implemented the method
+        /*
         switch(fileName) {
             case "watchlist.txt":
                 Object[] mockWatchlist = new Object[]{"The Matrix", "Inception", "Avengers: Endgame"};
@@ -82,7 +143,7 @@ public class Pod extends Artifact {
         }
 
     }
-
+*/
   /**
    * Method that converts an array of Object instances to a string, 
    * e.g. the array ["one", 2, true] is converted to the string "one\n2\ntrue\n"
